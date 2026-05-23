@@ -1,122 +1,190 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useMemo } from 'react';
+import { useVisualizer } from './context/VisualizerContext';
+import { algorithmGenerators, algorithmGroups } from './features/algorithms';
+import { useAnimationEngine } from './hooks/useAnimationEngine';
+import './App.css';
+
+const defaultArray = [12, 4, 18, 7, 9, 3, 14, 1, 22, 16];
 
 function App() {
-  const [count, setCount] = useState(0)
+  const {
+    currentAlgorithm,
+    playbackState,
+    currentStep,
+    history,
+    play,
+    pause,
+    stepForward,
+    stepBackward,
+    setAlgorithm,
+    loadHistory,
+  } = useVisualizer();
+
+  useAnimationEngine();
+
+  useEffect(() => {
+    const generator = algorithmGenerators[currentAlgorithm];
+    loadHistory(generator(defaultArray));
+  }, [currentAlgorithm, loadHistory]);
+
+  const progress = history.length > 1 ? (currentStep / (history.length - 1)) * 100 : 0;
+  const snapshot = history[currentStep] ?? {
+    step: 0,
+    arrayState: defaultArray,
+    activeIndices: [],
+    sortedIndices: [],
+    currentLine: 0,
+    explanation: 'Waiting for algorithm load.',
+  };
+
+  const flatAlgorithms = useMemo(
+    () => algorithmGroups.flatMap((group) => group.items),
+    [],
+  );
+
+  const activeAlgorithm = flatAlgorithms.find((item) => item.id === currentAlgorithm);
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
+    <main className="app-shell">
+      <div className="hero-overlay" />
+      <header className="hero-banner">
+        <div className="hero-copy">
+          <span className="eyebrow">DSA AI Visualizer</span>
+          <h1>Discover algorithms with premium motion and state tracing.</h1>
           <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+            Navigate across sorting, searching, trees, graphs, queues, and recursion with vivid
+            gradient animations, intelligent highlights, and insight-rich visual tracing.
           </p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+        <div className="hero-card summary-card">
+          <div>
+            <span>Current algorithm</span>
+            <strong>{activeAlgorithm?.label ?? currentAlgorithm.replace(/-/g, ' ')}</strong>
+          </div>
+          <div>
+            <span>Category</span>
+            <strong>{activeAlgorithm ? algorithmGroups.find((group) => group.items.some((item) => item.id === currentAlgorithm))?.label : 'General'}</strong>
+          </div>
+          <div>
+            <span>Trace length</span>
+            <strong>{history.length ? `${history.length} steps` : 'Loading...'}</strong>
+          </div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      </header>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <section className="dashboard-grid">
+        <aside className="controls-panel card">
+          <div className="algorithm-select">
+            <label htmlFor="algorithm">Choose a DSA topic</label>
+            <select
+              id="algorithm"
+              value={currentAlgorithm}
+              onChange={(event) => setAlgorithm(event.target.value as keyof typeof algorithmGenerators)}
+            >
+              {algorithmGroups.map((group) => (
+                <optgroup key={group.category} label={group.label}>
+                  {group.items.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          <div className="algorithm-detail">
+            <h3>{activeAlgorithm?.label ?? 'Pick an algorithm'}</h3>
+            <p>{activeAlgorithm?.description ?? 'Select an algorithm to see step-by-step execution.'}</p>
+          </div>
+
+          <div className="playback-buttons">
+            <button type="button" onClick={stepBackward} disabled={currentStep === 0}>
+              Step Back
+            </button>
+            {playbackState === 'playing' ? (
+              <button type="button" onClick={pause} className="primary">
+                Pause
+              </button>
+            ) : (
+              <button type="button" onClick={play} className="primary">
+                Play
+              </button>
+            )}
+            <button type="button" onClick={stepForward} disabled={currentStep >= history.length - 1}>
+              Step Forward
+            </button>
+          </div>
+
+          <div className="progress-group">
+            <span>Trace progress</span>
+            <div className="progress-bar">
+              <div className="progress-fill" style={{ width: `${progress}%` }} />
+            </div>
+          </div>
+
+          <div className="status-grid">
+            <div>
+              <span>Mode</span>
+              <strong>{playbackState === 'playing' ? 'Animated' : 'Manual'}</strong>
+            </div>
+            <div>
+              <span>Step</span>
+              <strong>{history.length ? `${currentStep + 1} / ${history.length}` : '0 / 0'}</strong>
+            </div>
+            <div>
+              <span>Active indices</span>
+              <strong>{snapshot.activeIndices.length ? snapshot.activeIndices.join(', ') : 'None'}</strong>
+            </div>
+          </div>
+        </aside>
+
+        <section className="visualizer-panel card">
+          <div className="visualizer-header">
+            <div>
+              <h2>State snapshot</h2>
+              <p>Visualizing algorithm state, active hotspots, and execution flow.</p>
+            </div>
+            <div className="step-pill">Step {snapshot.step + 1}</div>
+          </div>
+
+          <div className="array-state">
+            {snapshot.arrayState.map((value, index) => {
+              const isActive = snapshot.activeIndices.includes(index);
+              const isSorted = snapshot.sortedIndices.includes(index);
+
+              return (
+                <div
+                  key={`${value}-${index}`}
+                  className={`array-bar ${isActive ? 'active' : ''} ${isSorted ? 'sorted' : ''}`}
+                  style={{ transform: `scaleY(${1 + value / 42})` }}
+                >
+                  <span>{value}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="explanation-box">
+            <div className="explanation-top">
+              <p>{snapshot.explanation}</p>
+              <span>Line {snapshot.currentLine}</span>
+            </div>
+
+            <div className="legend-row">
+              <div className="legend-item active">
+                <span /> Active
+              </div>
+              <div className="legend-item sorted">
+                <span /> Sorted
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  );
 }
 
-export default App
+export default App;
