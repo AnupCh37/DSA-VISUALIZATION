@@ -19,9 +19,111 @@ const recordFrame = (
 
 export function generateBruteForceTrace(_: number[]): Snapshot[] {
   const frames: Snapshot[] = [];
-  recordFrame(frames, [1, 2, 3, 4], [], 'Brute force tries every possibility until a solution is found.', 1);
-  recordFrame(frames, [1, 2, 3, 4], [0, 1], 'Compare first and second candidate combinations.', 2);
-  recordFrame(frames, [1, 2, 3, 4], [2, 3], 'Continue checking remaining candidate solutions.', 3);
+  const rows = 6;
+  const cols = 7;
+  const startRow = 1;
+  const startCol = 1;
+  const endRow = 5;
+  const endCol = 3;
+  const startIndex = startRow * cols + startCol;
+  const endIndex = endRow * cols + endCol;
+  const walls = new Set([2, 3, 10, 16, 17, 22, 23, 24, 30, 31, 33]);
+  const gridBase = Array(rows * cols).fill(0);
+
+  gridBase[startIndex] = 2;
+  gridBase[endIndex] = 3;
+  walls.forEach((wall) => {
+    gridBase[wall] = 1;
+  });
+
+  const visited = new Set<number>();
+  const path: number[] = [];
+
+  const buildState = (activeIndex: number | null, pathCells: Set<number> = new Set()) => {
+    const state = gridBase.map((value, index) => {
+      if (index === startIndex) return 2;
+      if (index === endIndex) return 3;
+      if (pathCells.has(index)) return 6;
+      if (visited.has(index)) return 4;
+      return walls.has(index) ? 1 : 0;
+    });
+    return state;
+  };
+
+  const coord = (index: number) => {
+    const row = Math.floor(index / cols);
+    const col = index % cols;
+    return `[${row}, ${col}]`;
+  };
+
+  const directions = [
+    { dr: 0, dc: 1, label: 'Right' },
+    { dr: 1, dc: 0, label: 'Down' },
+    { dr: 0, dc: -1, label: 'Left' },
+    { dr: -1, dc: 0, label: 'Up' },
+  ];
+
+  const isValid = (row: number, col: number) => row >= 0 && row < rows && col >= 0 && col < cols;
+
+  const record = (index: number | null, explanation: string, line: number) => {
+    const state = buildState(index, new Set(path));
+    recordFrame(frames, state, index === null ? [] : [index], explanation, line);
+  };
+
+  record(null, 'Start at S. The blind DFS brute force robot will always try Right, Down, Left, Up in that order.', 1);
+
+  const dfs = (current: number): boolean => {
+    visited.add(current);
+    path.push(current);
+    record(current, `At ${coord(current)}. Marking it visited and inspecting neighbors in priority order.`, 2);
+
+    if (current === endIndex) {
+      record(current, `Reached the target E at ${coord(current)}. Successful path found!`, 4);
+      return true;
+    }
+
+    const row = Math.floor(current / cols);
+    const col = current % cols;
+
+    for (const { dr, dc, label } of directions) {
+      const nextRow = row + dr;
+      const nextCol = col + dc;
+      if (!isValid(nextRow, nextCol)) {
+        record(current, `Try ${label} from ${coord(current)} but the grid edge blocks the move.`, 2);
+        continue;
+      }
+
+      const nextIndex = nextRow * cols + nextCol;
+      if (walls.has(nextIndex)) {
+        record(current, `Try ${label} to ${coord(nextIndex)} but hit a wall.`, 2);
+        continue;
+      }
+      if (visited.has(nextIndex)) {
+        record(current, `Try ${label} to ${coord(nextIndex)} but already visited this cell.`, 2);
+        continue;
+      }
+
+      record(nextIndex, `Move ${label} to ${coord(nextIndex)} and continue exploring blindly.`, 2);
+      if (dfs(nextIndex)) {
+        return true;
+      }
+    }
+
+    path.pop();
+    record(current, `No more moves from ${coord(current)}. Backtracking to the previous cell.`, 3);
+    return false;
+  };
+
+  dfs(startIndex);
+  const finalPath = new Set(path);
+  const finalState = buildState(null, finalPath);
+  record(null, `Final brute force trace complete. The highlighted cells show the exact path taken to reach the end.`, 4);
+  frames[frames.length - 1] = {
+    ...frames[frames.length - 1],
+    arrayState: finalState,
+    activeIndices: [],
+  };
+
   return frames;
 }
 

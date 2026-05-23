@@ -8,7 +8,7 @@ import './App.css';
 const defaultArray = [12, 4, 18, 7, 9, 3, 14, 1, 22, 16];
 
 const algorithmUseCases: Record<AlgorithmType, string> = {
-  'brute-force': 'Best for exploring every possibility in small search spaces like puzzle solving or subset generation.',
+  'brute-force': 'A brute force grid search that behaves like an uninformed DFS robot: explore blindly in the order Right, Down, Left, Up, backtrack when trapped, and only stop when the target is found.',
   'divide-and-conquer': 'Used in merge sort, quick sort, and large problem breakdowns where subproblems are solved independently.',
   'greedy-algorithms': 'Used in interval scheduling, coin change heuristics, and anytime a locally optimal choice is effective.',
   'branch-and-bound': 'Used for optimization tasks like knapsack, TSP, and pruning states that cannot beat the current best.',
@@ -283,6 +283,51 @@ function App() {
     );
   };
 
+  const renderGridVisual = () => (
+    <div className="grid-state">
+      {snapshot.arrayState.map((value, index) => {
+        const classNames = ['grid-cell'];
+        let label = '';
+
+        if (snapshot.activeIndices.includes(index)) {
+          classNames.push('active');
+        }
+
+        switch (value) {
+          case 1:
+            classNames.push('wall');
+            break;
+          case 2:
+            classNames.push('start');
+            label = 'S';
+            break;
+          case 3:
+            classNames.push('end');
+            label = 'E';
+            break;
+          case 4:
+            classNames.push('visited');
+            break;
+          case 5:
+            classNames.push('found');
+            label = '✓';
+            break;
+          case 6:
+            classNames.push('path');
+            break;
+          default:
+            classNames.push('empty');
+        }
+
+        return (
+          <div key={index} className={classNames.join(' ')}>
+            <span>{label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   const renderHashVisual = () => (
     <div className="hash-state">
       {snapshot.arrayState.map((value, index) => (
@@ -340,13 +385,8 @@ function App() {
       case 'red-black-intro':
       case 'huffman-coding':
         return renderTreeVisual();
-      case 'adjacency-matrix':
-      case 'adjacency-list':
-      case 'bfs':
-      case 'dfs':
-      case 'dijkstra':
-      case 'floyd-warshall':
-      case 'kruskal':
+    case 'brute-force':
+      return renderGridVisual();
       case 'prim':
       case 'warshall':
       case 'topological-sort':

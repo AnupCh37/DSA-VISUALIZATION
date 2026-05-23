@@ -462,6 +462,65 @@
   color: #4338ca;
 }
 
+.grid-state {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(40px, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.grid-cell {
+  min-height: 48px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #eef2ff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.grid-cell.empty {
+  background: #f8fafc;
+}
+
+.grid-cell.wall {
+  background: #334155;
+  color: #f8fafc;
+}
+
+.grid-cell.start {
+  background: #22c55e;
+  color: white;
+}
+
+.grid-cell.end {
+  background: #ef4444;
+  color: white;
+}
+
+.grid-cell.visited {
+  background: #fde68a;
+}
+
+.grid-cell.path {
+  background: linear-gradient(180deg, #22d3ee 0%, #0ea5e9 100%);
+  color: white;
+}
+
+.grid-cell.found {
+  background: #a78bfa;
+  color: white;
+}
+
+.grid-cell.active {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.22);
+}
+
 .hanoi-state {
   display: flex;
   justify-content: space-between;
