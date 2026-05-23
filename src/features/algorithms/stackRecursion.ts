@@ -164,19 +164,30 @@ export function generateFibonacciRecursionTrace(_: number[]): Snapshot[] {
 
 export function generateTowerOfHanoiTrace(_: number[]): Snapshot[] {
   const frames: Snapshot[] = [];
-  const moveStack: string[] = [];
+  const towers: number[][] = [[3, 2, 1], [], []];
 
-  const move = (count: number, fromRod: string, toRod: string, auxRod: string): void => {
+  const recordState = (activeIndices: number[], explanation: string, line: number): void => {
+    const state = towers.flatMap((tower) => [...tower, ...Array(3 - tower.length).fill(0)]);
+    recordFrame(frames, state, activeIndices, explanation, line);
+  };
+
+  const move = (count: number, from: number, to: number, aux: number): void => {
     if (count === 0) {
       return;
     }
-    move(count - 1, fromRod, auxRod, toRod);
-    moveStack.push(`${count}: ${fromRod} -> ${toRod}`);
-    recordFrame(frames, moveStack.map((_, index) => index + 1), [moveStack.length - 1], `Move disk ${count} from ${fromRod} to ${toRod}.`, 1);
-    move(count - 1, auxRod, toRod, fromRod);
+
+    move(count - 1, from, aux, to);
+    const disk = towers[from].pop();
+    if (disk !== undefined) {
+      towers[to].push(disk);
+      const targetIndex = to * 3 + towers[to].length - 1;
+      recordState([targetIndex], `Move disk ${disk} from peg ${String.fromCharCode(65 + from)} to peg ${String.fromCharCode(65 + to)}.`, 1);
+    }
+    move(count - 1, aux, to, from);
   };
 
-  move(3, 'A', 'C', 'B');
-  recordFrame(frames, [1, 2, 3], [], 'Tower of Hanoi complete.', 2);
+  recordState([], 'Start with all three rings on peg A.', 1);
+  move(3, 0, 2, 1);
+  recordState([], 'Tower of Hanoi complete.', 2);
   return frames;
 }
